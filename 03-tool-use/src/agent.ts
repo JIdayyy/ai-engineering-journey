@@ -5,15 +5,11 @@ import { z } from "zod";
 import { evaluate } from "mathjs";
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
-import type { WeatherResponse, WorldTimeApiResponse } from "./types.js";
+import type { WeatherResponse } from "./types.js";
+import { Spinner } from "./misc/spinner.js";
 
-// ============================================
-// À TOI : Définis les tools
-// ============================================
+const spinner = new Spinner();
 
-// Tool 1 : Météo
-// Utilise wttr.in : fetch(`https://wttr.in/${city}?format=j1`) retourne du JSON
-// Extrait température, condition, etc.
 const getWeatherTool = tool({
   description: "Get weather from wttr api",
   inputSchema: z.object({
@@ -28,7 +24,6 @@ const getWeatherTool = tool({
 
       return {
         temperature: json.current_condition[0]?.temp_C,
-        // condition: json.current_condition[0]?.lang_fr[0]?.value,
       };
     } catch (error) {
       console.log(error);
@@ -36,12 +31,9 @@ const getWeatherTool = tool({
   },
   outputSchema: z.object({
     temperature: z.string(),
-    // condition: z.string(),
   }),
 });
 
-// Tool 2 : Heure actuelle
-// Utilise worldtimeapi.org : fetch(`https://timeapi.world/`)
 const getCurrentTimeTool = tool({
   description: "Get current time in a specific timezone",
   inputSchema: z.object({
@@ -60,8 +52,6 @@ const getCurrentTimeTool = tool({
   },
 });
 
-// Tool 3 : Calculatrice
-// Utilise mathjs : evaluate('2 + 2 * 3') retourne 8
 const calculateTool = tool({
   description: "Calculate math expressions with mathjs lib",
   inputSchema: z.object({
@@ -78,10 +68,6 @@ const calculateTool = tool({
     };
   },
 });
-
-// ============================================
-// À TOI : La fonction qui appelle le LLM avec les tools
-// ============================================
 
 async function ask(question: string) {
   const result = streamText({
@@ -110,17 +96,25 @@ async function main() {
       break;
     }
 
+    spinner.start("Réflexion en cours");
+
     process.stdout.write("\nAssistant: ");
 
     const result = await ask(question);
 
+    let firstChunk = true;
     for await (const chunk of result.textStream) {
+      if (firstChunk) {
+        spinner.stop();
+        process.stdout.write("\nAssistant: ");
+        firstChunk = false;
+      }
       process.stdout.write(chunk);
     }
 
+    spinner.stop();
     process.stdout.write("\n\n");
 
-    // Debug optionnel : voir les tools appelés
     const steps = await result.steps;
     if (steps.length > 0) {
       console.log("--- Tools appelés ---");
