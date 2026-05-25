@@ -2,7 +2,6 @@ import "dotenv/config";
 import { embed, embedMany, cosineSimilarity, type EmbedManyResult } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { songs, type Song } from "./data/songs.js";
-import { open } from "node:fs";
 
 type SongWithEmbedding = {
   song: Song;
@@ -12,7 +11,6 @@ type SongWithEmbedding = {
 async function buildEmbeddings(
   songs: Song[],
 ): Promise<Map<string, SongWithEmbedding>> {
-  // Création d'un ID unique par chanson (titre + artist suffit ici)
   const indexed = songs.map((song) => ({
     id: `${song.title}::${song.artist}`,
     text: song.description,
@@ -36,18 +34,11 @@ async function buildEmbeddings(
   return result;
 }
 
-// ============================================
-// À TOI : Fonction qui trouve les chansons les plus proches d'une requête
-// ============================================
 async function findSimilarSongs(
   query: string,
-  songsWithEmbeddings: SongWithEmbeddin[],
+  songsWithEmbeddings: SongWithEmbedding[],
   topK = 3,
 ) {
-  // 1. Embed la requête (avec embed cette fois, pas embedMany)
-  // 2. Pour chaque chanson, calculer cosineSimilarity entre embedding requête et embedding chanson
-  // 3. Trier par similarité décroissante
-  // 4. Retourner les topK avec leur score
   const embededquery = await embed({
     model: openai.embedding("text-embedding-3-small"),
     value: query,
