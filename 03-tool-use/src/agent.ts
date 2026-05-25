@@ -58,7 +58,7 @@ const calculateTool = tool({
     expression: z.string(),
   }),
   outputSchema: z.object({
-    result: z.string(),
+    result: z.number(),
   }),
   execute: async ({ expression }) => {
     const result = evaluate(expression);
@@ -72,6 +72,8 @@ const calculateTool = tool({
 async function ask(question: string) {
   const result = streamText({
     model: anthropic("claude-sonnet-4-5"),
+    system:
+      "Tu es un assistant qui répond en français aux questions de l'utilisateur. Après avoir utilisé un tool, formule toujours une réponse claire en langage naturel qui présente le résultat.",
     tools: {
       getWeather: getWeatherTool,
       getCurrentTime: getCurrentTimeTool,
@@ -98,12 +100,12 @@ async function main() {
 
     spinner.start("Réflexion en cours");
 
-    process.stdout.write("\nAssistant: ");
-
     const result = await ask(question);
 
     let firstChunk = true;
+    let chunkCount = 0;
     for await (const chunk of result.textStream) {
+      chunkCount++;
       if (firstChunk) {
         spinner.stop();
         process.stdout.write("\nAssistant: ");
@@ -120,7 +122,9 @@ async function main() {
       console.log("--- Tools appelés ---");
       steps.forEach((step, i) => {
         step.toolCalls?.forEach((call) => {
-          console.log(`  ${call.toolName}(${JSON.stringify(call.input)})`);
+          console.log(
+            `  ${call.toolName}(${JSON.stringify(call.input)}) -- step ${step.stepNumber}`,
+          );
         });
       });
       console.log("---\n");
