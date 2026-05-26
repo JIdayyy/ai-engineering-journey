@@ -53,29 +53,65 @@ async function askWithRAG(question: string): Promise<void> {
   console.log(`\n🔍 Question: "${question}"`);
   console.log("─".repeat(80));
 
+  // 1. Retrieval
   const chunks = await findRelevantChunks(question, 5);
 
-  console.log(`\n📚 Found ${chunks.length} relevant chunks:`);
-  chunks.forEach((c, i) => {
+  // Filtrage par seuil de similarité
+  const MIN_SIMILARITY = 0.4;
+  const relevantChunks = chunks.filter((c) => c.similarity >= MIN_SIMILARITY);
+
+  if (relevantChunks.length === 0) {
     console.log(
-      `  [${i + 1}] ${c.source_title} (chunk #${c.chunk_index}) — score: ${Number(c.similarity).toFixed(3)}`,
+      "\n💬 Désolé, aucune source pertinente trouvée pour cette question.",
+    );
+    return;
+  }
+
+  console.log(
+    `\n📚 Found ${relevantChunks.length} relevant chunks (>${MIN_SIMILARITY}):`,
+  );
+  relevantChunks.forEach((c, i) => {
+    console.log(
+      `  [Source ${i + 1}] ${c.source_title} (chunk #${c.chunk_index}) — score: ${Number(c.similarity).toFixed(3)}`,
     );
   });
 
-  const context = chunks
-    .map((c, i) => {
-      return `[Source ${i}] ${c.source_title} - ${c.source_url} \n\n ${c.content}`;
-    })
-    .join("\n\n");
+  // 2. Format context
+  const context = relevantChunks
+    .map(
+      (c, i) =>
+        `[Source ${i + 1}] ${c.source_title}\nURL: ${c.source_url}\n\n${c.content}`,
+    )
+    .join("\n\n---\n\n");
 
+  // 3. Generate
   const { text } = await generateText({
     model: anthropic("claude-sonnet-4-5"),
-    system, // À TOI
-    prompt: context + `[Question utilisateur]: ${question}`, // À TOI
+    system: `Tu es un assistant technique qui répond aux questions en t'appuyant UNIQUEMENT sur les sources fournies.
+
+    Règles strictes :
+    1. Utilise UNIQUEMENT les informations des sources fournies
+    2. Cite tes sources avec le format [Source N] dans ta réponse
+    3. Si les sources ne contiennent pas assez d'info, dis-le clairement
+    4. N'invente JAMAIS d'information qui n'est pas dans les sources
+    5. Réponds dans la langue de la question`,
+    prompt: `Sources:
+
+    ${context}
+
+    ---
+
+    Question: ${question}`,
   });
 
+  // 4. Display
   console.log("\n💬 Réponse:");
   console.log(text);
+
+  console.log("\n📎 Sources consultées:");
+  relevantChunks.forEach((c, i) => {
+    console.log(`  [Source ${i + 1}] ${c.source_url}`);
+  });
 }
 
 async function main() {
