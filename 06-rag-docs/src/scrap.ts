@@ -25,7 +25,6 @@ export async function scrapePage(url: string): Promise<ScrapedPage> {
 
   const content = await response.text();
 
-  // Extraire le titre depuis le premier "# titre" du markdown
   const titleMatch = content.match(/^#\s+(.+)$/m);
   const title = titleMatch ? titleMatch[1]?.trim() : "Untitled";
 
