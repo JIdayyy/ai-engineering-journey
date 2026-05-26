@@ -13,15 +13,6 @@ type SearchResult = {
   similarity: number;
 };
 
-const system = `Tu es un assistant technique qui répond aux questions en t'appuyant UNIQUEMENT sur les sources fournies.
-
-Règles strictes :
-1. Utilise UNIQUEMENT les informations des sources fournies
-2. Cite tes sources en fin de réponse avec le format [Source N]
-3. Si les sources ne contiennent pas assez d'info pour répondre, dis-le clairement
-4. N'invente JAMAIS d'information qui n'est pas dans les sources
-5. Si tu utilises du code, prends-le directement des exemples des sources`;
-
 async function findRelevantChunks(
   query: string,
   topK = 5,
