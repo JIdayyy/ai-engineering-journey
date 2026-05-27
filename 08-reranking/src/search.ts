@@ -130,7 +130,7 @@ async function askWithRAG(
   console.log(`\n📚 Final ${chunks.length} chunks used:`);
   chunks.forEach((c, i) => {
     const rerankInfo = useRerank
-      ? ` — rerank: ${(c as any).rerank_score?.toFixed(3) ?? "N/A"}`
+      ? ` — rerank: ${c.rerank_score?.toFixed(3) ?? "N/A"}`
       : "";
     console.log(
       `  [${i + 1}] ${c.source_title} (chunk #${c.chunk_index}) — cosine: ${Number(c.similarity).toFixed(3)}${rerankInfo}`,
@@ -206,7 +206,7 @@ async function main() {
     console.log("\n🎯 Top 5 after RERANKING:");
     reranked.forEach((c, i) => {
       console.log(
-        `  [${i + 1}] ${c.source_title} (chunk #${c.chunk_index}) — rerank: ${(c as any).rerank_score?.toFixed(3) ?? "N/A"}`,
+        `  [${i + 1}] ${c.source_title} (chunk #${c.chunk_index}) — rerank: ${c.rerank_score?.toFixed(3) ?? "N/A"}`,
       );
     });
 
@@ -267,7 +267,7 @@ async function main() {
   console.log("\n🎯 Top 5 after RERANK:");
   badReranked.forEach((c, i) => {
     console.log(
-      `  [${i + 1}] ${c.source_title} (chunk #${c.chunk_index}) — ${(c as any).rerank_score?.toFixed(3) ?? "N/A"}`,
+      `  [${i + 1}] ${c.source_title} (chunk #${c.chunk_index}) — ${c.rerank_score?.toFixed(3) ?? "N/A"}`,
     );
   });
 
