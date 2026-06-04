@@ -3,82 +3,11 @@ import { generateText, Output } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { ChantierRequestSchema, type ChantierRequest } from "./types.js";
 
-const FEW_SHOT_EXAMPLES: FewShotExample[] = [
-  {
-    input: `Bonjour, Marc Lefevre ici, je vous appelle pour un devis. 
-J'ai une cuisine de 12m² à carreler à Anglet, mon numéro c'est le 0612345678. 
-Je veux du grès cérame mat blanc en 30x60 au sol. Au mur, faïence blanche brillante 20x20. 
-Pour septembre si possible.`,
-    output: {
-      needs_clarification: [],
-      confidence: "high",
-      client: {
-        name: "Marc Lefevre",
-        phone: "0612345678",
-        email: null,
-        location: "Anglet",
-      },
-      chantier: {
-        type: "cuisine",
-        surface_m2: 12,
-        contraintes: [],
-        materiaux: {
-          sol: {
-            type: "grès cérame",
-            format: "30x60",
-            finition: "mat blanc",
-          },
-          murs: {
-            type: "faïence",
-            format: "20x20",
-            finition: "blanche brillante",
-          },
-        },
-        deadline: "septembre",
-      },
-    },
-  },
-  {
-    input: `Salut, c'est Léa. Faudrait carreler ma terrasse, c'est pas urgent. 
-Genre 25m² je pense, j'ai pas encore choisi le matériau. Je suis sur Bidart.`,
-    output: {
-      needs_clarification: [
-        "Quel type de matériau pour le sol ?",
-        "Format des carreaux souhaité ?",
-        "Finition souhaitée (antidérapant, etc.) ?",
-        "Numéro de téléphone ?",
-        "Nom de famille ?",
-        "Date approximative pour les travaux ?",
-      ],
-      confidence: "low",
-      client: {
-        name: "Léa",
-        phone: null,
-        email: null,
-        location: "Bidart",
-      },
-      chantier: {
-        type: "terrasse",
-        surface_m2: 25,
-        contraintes: [],
-        materiaux: {
-          sol: null,
-          murs: null,
-        },
-        deadline: null,
-      },
-    },
-  },
-];
-
 // ============================================
 // Extraction function
 // ============================================
 
-async function extractChantierRequest(
-  text: string,
-  useFewShots,
-): Promise<ChantierRequest> {
+async function extractChantierRequest(text: string): Promise<ChantierRequest> {
   const result = await generateText({
     model: anthropic("claude-sonnet-4-5"),
     output: Output.object({
@@ -92,7 +21,9 @@ async function extractChantierRequest(
              2. Set to null any field where the information is NOT in the text
              3. NEVER invent or guess information
              4. For contraintes, list ALL mentioned constraints as separate strings
-             5. Preserve the original language in extracted strings`,
+             5. Preserve the original language in extracted strings
+             6. Output must strictly follow the provided schema, in needs_clarification put the things where we need clarifications. Put only things related to the chantier request, not general questions about the client or the process. DO not put here email, phone or name if they are missing
+             `,
 
     prompt: `Extract the chantier request details from this customer message:
 

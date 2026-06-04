@@ -36,12 +36,6 @@ export const MaterialSchema = z.object({
 });
 
 export const ChantierRequestSchema = z.object({
-  needs_clarification: z
-    .array(z.string())
-    .describe("Put here the things where we need clarifications"),
-  confidence: z
-    .enum(["high", "medium", "low"])
-    .describe("Put your confidence indice here"),
   client: z.object({
     name: z.string().nullable(),
     phone: z.string().nullable(),
@@ -70,6 +64,14 @@ export const ChantierRequestSchema = z.object({
         "When the work should be done (free text like 'before summer 2026')",
       ),
   }),
+  needs_clarification: z
+    .array(z.string())
+    .describe(
+      "Put here the things where we need clarifications. Put only things related to the chantier request, not general questions about the client or the process. DO not put here email, phone or name if they are missing",
+    ),
+  confidence: z
+    .enum(["high", "medium", "low"])
+    .describe("Put your confidence indice here"),
 });
 
 export type ChantierRequest = z.infer<typeof ChantierRequestSchema>;
